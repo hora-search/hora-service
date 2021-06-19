@@ -12,13 +12,13 @@ use std::sync::Mutex;
 #[macro_use]
 extern crate lazy_static;
 
-
 trait ANNIndex: ann_index::ANNIndex<f32, usize> + ann_index::SerializableIndex<f32, usize> {}
 
 lazy_static! {
-static ref mut ANNIndexManager: Mutex<
-Option<HashMap<String, Box<real_hora::core::ann_index::ANNIndex<f32, usize>>>>,
-> = {Mutex::new(None)};
+    static ref ANNIndexMnger: Mutex<HashMap<String, Box<real_hora::core::ann_index::ANNIndex<f32, usize>>>> = {
+        let mut m = Mutex::new(HashMap::new());
+        m
+    };
 }
 
 pub fn metrics_transform(s: &str) -> metrics::Metric {
@@ -49,6 +49,8 @@ async fn new(
         bytes.extend_from_slice(&item?);
     }
 
+    ANNIndexMnger.lock().unwrap();
+
     // match index_type {
     //     "hnsw_index" => {
     //         let v = serde_json::from_slice<hora::index::HNSWParams>(&body)?;
@@ -70,8 +72,6 @@ async fn add(
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    ANNIndexManager = Mutex::new(Some(HashMap::new()));
-
     HttpServer::new(move || App::new().service(new).service(add))
         .bind("127.0.0.1:8080")?
         .run()
