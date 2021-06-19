@@ -1,12 +1,9 @@
-use actix_web::{get, post, web, App, Error, HttpResponse, HttpServer, Responder};
-use futures_core::stream::Stream;
+use actix_web::{post, web, App, Error, HttpResponse, HttpServer, Responder};
 use futures_util::StreamExt;
 use real_hora::core::ann_index;
 use real_hora::core::metrics;
 use serde::Deserialize;
-use serde_json;
 use std::collections::HashMap;
-use std::future::Future;
 use std::iter::Iterator;
 use std::sync::Mutex;
 #[macro_use]
@@ -15,10 +12,8 @@ extern crate lazy_static;
 trait ANNIndex: ann_index::ANNIndex<f32, usize> + ann_index::SerializableIndex<f32, usize> {}
 
 lazy_static! {
-    static ref ANNIndexMnger: Mutex<HashMap<String, Box<real_hora::core::ann_index::ANNIndex<f32, usize>>>> = {
-        let mut m = Mutex::new(HashMap::new());
-        m
-    };
+    static ref ANNIndexMnger: Mutex<HashMap<String, Box<dyn real_hora::core::ann_index::ANNIndex<f32, usize>>>> =
+        { Mutex::new(HashMap::new()) };
 }
 
 pub fn metrics_transform(s: &str) -> metrics::Metric {
@@ -40,9 +35,9 @@ struct AddItem {
 
 #[post("/new/{index_type}")]
 async fn new(
-    web::Path(index_type): web::Path<String>,
+    web::Path(_index_type): web::Path<String>,
     mut payload: web::Payload,
-    data: web::Data<Mutex<HashMap<String, Box<ann_index::ANNIndex<f32, usize>>>>>,
+    _data: web::Data<Mutex<HashMap<String, Box<dyn ann_index::ANNIndex<f32, usize>>>>>,
 ) -> Result<HttpResponse, Error> {
     let mut bytes = web::BytesMut::new();
     while let Some(item) = payload.next().await {
@@ -63,9 +58,9 @@ async fn new(
 
 #[post("/add/{index_name}")]
 async fn add(
-    path: web::Path<String>,
-    json: web::Json<AddItem>,
-    data: web::Data<Mutex<HashMap<String, Box<ann_index::ANNIndex<f32, usize>>>>>,
+    _path: web::Path<String>,
+    _json: web::Json<AddItem>,
+    _data: web::Data<Mutex<HashMap<String, Box<dyn ann_index::ANNIndex<f32, usize>>>>>,
 ) -> impl Responder {
     HttpResponse::Ok().body("Hello world!")
 }
