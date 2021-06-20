@@ -1,0 +1,16 @@
+[package]
+name = "hora-service"
+version = "0.1.0"
+authors = ["aljun <gagasalamer@163.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+actix-web = "3"
+real_hora = { package = "hora", path = "../hora"}
+serde = {version = "1.0", features = ["derive"]}
+serde_json = {version = "1.0"}
+futures-util = "0.3.15"
+futures-core = "0.3.15"
+lazy_static = "1.4.0"
