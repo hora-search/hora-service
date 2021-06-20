@@ -1,6 +1,6 @@
 use actix_web::{post, web, App, Error, HttpResponse, HttpServer, Responder, Result};
 use futures_util::StreamExt;
-use real_hora;
+
 use real_hora::core::ann_index;
 use real_hora::core::metrics;
 use serde::{Deserialize, Serialize};
@@ -14,7 +14,7 @@ trait ANNIndex: ann_index::ANNIndex<f32, usize> + ann_index::SerializableIndex<f
 
 lazy_static! {
     static ref ANN_INDEX_MANAGER: Mutex<HashMap<String, Box<dyn real_hora::core::ann_index::ANNIndex<f32, usize>>>> =
-        { Mutex::new(HashMap::new()) };
+        Mutex::new(HashMap::new());
 }
 
 pub fn metrics_transform(s: &str) -> metrics::Metric {
@@ -62,9 +62,6 @@ async fn new(
     while let Some(item) = payload.next().await {
         bytes.extend_from_slice(&item?);
     }
-
-    ANN_INDEX_MANAGER.lock().unwrap();
-
     match index_type.as_str() {
         "hnsw_index" => {
             let v =
@@ -160,12 +157,10 @@ async fn build(path: web::Path<String>, mt: web::Query<String>) -> impl Responde
 #[post("/search/{index_name}")]
 async fn search(path: web::Path<String>, query: web::Query<SearchItem>) -> Result<HttpResponse> {
     match ANN_INDEX_MANAGER.lock().unwrap().get_mut(&path.to_string()) {
-        Some(idx) => {
-            return Ok(HttpResponse::Ok().json(ResultItem {
-                idx: idx.search(&query.features, query.k),
-            }))
-        }
-        None => return Ok(HttpResponse::NotFound().finish()),
+        Some(idx) => Ok(HttpResponse::Ok().json(ResultItem {
+            idx: idx.search(&query.features, query.k),
+        })),
+        None => Ok(HttpResponse::NotFound().finish()),
     }
 }
 
